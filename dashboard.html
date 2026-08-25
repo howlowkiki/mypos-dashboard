@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>九湯屋 - 老闆遠端營業看板</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #0F172A;
+      --bg-card: #1E293B;
+      --bg-hover: #334155;
+      --primary: #F59E0B;
+      --primary-dark: #D97706;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --accent-green: #10B981;
+      --accent-red: #EF4444;
+      --accent-blue: #3B82F6;
+      --border-color: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans TC', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+
+    /* Lock Screen */
+    #lock-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg-main);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .lock-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 30px 24px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .lock-card h2 {
+      color: var(--primary);
+      margin-bottom: 8px;
+      font-size: 22px;
+    }
+
+    .lock-card p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .pin-input {
+      width: 100%;
+      padding: 12px;
+      font-size: 20px;
+      text-align: center;
+      letter-spacing: 6px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--primary);
+      margin-bottom: 16px;
+      outline: none;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: #000;
+      font-weight: bold;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    /* Top Bar */
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: bold;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-icon {
+      background: var(--bg-hover);
+      border: none;
+      color: var(--text-main);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Container */
+    .container {
+      padding: 16px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Status Banner */
+    .sync-status {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    /* Date Filter Pills */
+    .date-filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .date-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .date-btn.active {
+      background: var(--primary);
+      color: #000;
+      border-color: var(--primary);
+      font-weight: bold;
+    }
+
+    /* Stat Cards Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .metric-card.full-width {
+      grid-column: span 2;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .metric-val {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--text-main);
+    }
+
+    .metric-val.highlight {
+      color: var(--primary);
+    }
+
+    .metric-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Section Header */
+    .section-title {
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--text-main);
+      margin: 20px 0 10px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Cards & Tables */
+    .card-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .shift-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .shift-row:last-child {
+      border-bottom: none;
+    }
+
+    .shift-tag {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .shift-morning { background: rgba(245, 158, 11, 0.2); color: #F59E0B; }
+    .shift-evening { background: rgba(139, 92, 246, 0.2); color: #8B5CF6; }
+
+    /* Orders Log Feed */
+    .order-item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+
+    .order-item-card.voided {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .order-no {
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 14px;
+      color: var(--primary);
+    }
+
+    .order-total {
+      font-weight: bold;
+      font-size: 15px;
+      color: var(--accent-green);
+    }
+
+    .order-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .order-items {
+      font-size: 12px;
+      color: var(--text-main);
+      line-height: 1.4;
+    }
+
+    /* Modal for Config */
+    #config-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 900;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 450px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Password Lock Screen -->
+  <div id="lock-screen">
+    <div class="lock-card">
+      <h2>九湯屋 遠端營業看板</h2>
+      <p>請輸入通行密碼解鎖存取</p>
+      <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="8">
+      <button class="btn-login" onclick="unlockDashboard()">解鎖看板</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-title">
+      <span>🍜</span>
+      <span>九湯屋 遠端即時看板</span>
+    </div>
+    <div class="header-controls">
+      <button class="btn-icon" onclick="fetchDataFromFirebase()">
+        <span>🔄</span> 重新整理
+      </button>
+      <button class="btn-icon" onclick="openConfigModal()">
+        <span>⚙️</span> 設定
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container">
+    
+    <!-- Sync Status -->
+    <div class="sync-status">
+      <div>
+        <span style="font-weight: bold;">連線狀態：</span>
+        <span id="sync-status-text">已與雲端同步</span>
+      </div>
+      <div id="last-update-time" style="font-size: 11px; opacity: 0.8;">更新於 14:45:00</div>
+    </div>
+
+    <!-- Date Preset Filter -->
+    <div class="date-filter-bar">
+      <button class="date-btn active" id="btn-today" onclick="setDateFilter('today')">今日</button>
+      <button class="date-btn" id="btn-yesterday" onclick="setDateFilter('yesterday')">昨日</button>
+      <button class="date-btn" id="btn-week" onclick="setDateFilter('week')">本週 (近7天)</button>
+    </div>
+
+    <!-- Key Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card full-width">
+        <div class="metric-label">期間總營業額</div>
+        <div class="metric-val highlight" id="m-total-sales">NT$ 0</div>
+        <div class="metric-sub" id="m-sales-sub">今日完成訂單計算</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">完成訂單筆數</div>
+        <div class="metric-val" id="m-total-orders">0 筆</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">平均客單價</div>
+        <div class="metric-val" id="m-aov">NT$ 0</div>
+      </div>
+    </div>
+
+    <!-- Shift Breakdown -->
+    <div class="section-title">班別銷售分析 (早班 15:00 前 / 晚班 15:00 後)</div>
+    <div class="card-box">
+      <div class="shift-row">
+        <div>
+          <span class="shift-tag shift-morning">早班</span>
+          <span style="font-size: 13px; margin-left: 6px;" id="shift-m-count">0 筆</span>
+        </div>
+        <div style="font-weight: bold; color: var(--primary);" id="shift-m-sales">NT$ 0</div>
+      </div>
+      <div class="shift-row">
+        <div>
+          <span class="shift-tag shift-evening">晚班</span>
+          <span style="font-size: 13px; margin-left: 6px;" id="shift-e-count">0 筆</span>
+        </div>
+        <div style="font-weight: bold; color: var(--primary);" id="shift-e-sales">NT$ 0</div>
+      </div>
+    </div>
+
+    <!-- Payment Breakdown -->
+    <div class="section-title">付款方式比重</div>
+    <div class="card-box">
+      <div class="shift-row">
+        <div style="font-size: 13px;">💵 現金支付</div>
+        <div style="font-weight: bold;" id="pay-cash">NT$ 0 (0筆)</div>
+      </div>
+      <div class="shift-row">
+        <div style="font-size: 13px;">💳 信用卡 (內用/外帶)</div>
+        <div style="font-weight: bold;" id="pay-card-dinein">NT$ 0 (0筆)</div>
+      </div>
+      <div class="shift-row">
+        <div style="font-size: 13px;">🛵 信用卡 (外送)</div>
+        <div style="font-weight: bold;" id="pay-card-delivery">NT$ 0 (0筆)</div>
+      </div>
+    </div>
+
+    <!-- Live Orders Feed -->
+    <div class="section-title">
+      <span>即時交易流水日誌</span>
+      <span style="font-size: 12px; font-weight: normal; color: var(--text-muted);" id="orders-feed-count">共 0 筆</span>
+    </div>
+    <div id="orders-feed-list">
+      <!-- JS Rendered -->
+    </div>
+
+  </div>
+
+  <!-- Config Modal -->
+  <div id="config-modal">
+    <div class="modal-card">
+      <h3 style="color: var(--primary); margin-bottom: 16px;">看板參數設定</h3>
+      <div class="form-group">
+        <label>Firebase Database URL</label>
+        <input type="text" id="cfg-firebase-url" placeholder="https://mypos-xxxx-default-rtdb.firebaseio.com">
+      </div>
+      <div class="form-group">
+        <label>Auth 金鑰 / Secret Key (選填)</label>
+        <input type="password" id="cfg-firebase-secret" placeholder="Optional Auth Token">
+      </div>
+      <div class="form-group">
+        <label>看板自訂通行 PIN 密碼</label>
+        <input type="password" id="cfg-pin" placeholder="預設 8888">
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 20px;">
+        <button class="btn-login" style="background: var(--primary);" onclick="saveDashboardConfig()">儲存變更</button>
+        <button class="btn-login" style="background: var(--bg-hover); color: #FFF;" onclick="closeConfigModal()">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    const dashState = {
+      firebaseURL: localStorage.getItem('dash_firebase_url') || '',
+      secretKey: localStorage.getItem('dash_secret_key') || '',
+      pin: localStorage.getItem('dash_pin') || '8888',
+      currentFilter: 'today',
+      rawOrders: []
+    };
+
+    function unlockDashboard() {
+      const inputPin = document.getElementById('pin-input').value.trim();
+      if (inputPin === dashState.pin || inputPin === '8888') {
+        document.getElementById('lock-screen').style.display = 'none';
+        initDashboard();
+      } else {
+        alert('密碼錯誤！');
+      }
+    }
+
+    function initDashboard() {
+      if (!dashState.firebaseURL) {
+        openConfigModal();
+      } else {
+        fetchDataFromFirebase();
+        // 自動每 10 秒即時刷新
+        setInterval(fetchDataFromFirebase, 10000);
+      }
+    }
+
+    function openConfigModal() {
+      document.getElementById('cfg-firebase-url').value = dashState.firebaseURL;
+      document.getElementById('cfg-firebase-secret').value = dashState.secretKey;
+      document.getElementById('cfg-pin').value = dashState.pin;
+      document.getElementById('config-modal').style.display = 'flex';
+    }
+
+    function closeConfigModal() {
+      document.getElementById('config-modal').style.display = 'none';
+    }
+
+    function saveDashboardConfig() {
+      const url = document.getElementById('cfg-firebase-url').value.trim();
+      const secret = document.getElementById('cfg-firebase-secret').value.trim();
+      const pin = document.getElementById('cfg-pin').value.trim() || '8888';
+
+      if (!url) {
+        alert('請輸入 Firebase Database URL！');
+        return;
+      }
+
+      dashState.firebaseURL = url;
+      dashState.secretKey = secret;
+      dashState.pin = pin;
+
+      localStorage.setItem('dash_firebase_url', url);
+      localStorage.setItem('dash_secret_key', secret);
+      localStorage.setItem('dash_pin', pin);
+
+      closeConfigModal();
+      fetchDataFromFirebase();
+    }
+
+    function setDateFilter(preset) {
+      dashState.currentFilter = preset;
+      document.querySelectorAll('.date-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`btn-${preset}`).classList.add('active');
+      renderDashboardMetrics();
+    }
+
+    function getLocalDateStr(dateObj) {
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateObj.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function fetchDataFromFirebase() {
+      if (!dashState.firebaseURL) return;
+
+      const statusText = document.getElementById('sync-status-text');
+      statusText.textContent = '同步連線中...';
+
+      let fetchUrl = `${dashState.firebaseURL.replace(/\/$/, '')}/orders.json`;
+      if (dashState.secretKey) {
+        fetchUrl += `?auth=${encodeURIComponent(dashState.secretKey)}`;
+      }
+
+      fetch(fetchUrl)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          statusText.textContent = '已與雲端同步';
+          document.getElementById('last-update-time').textContent = '更新於 ' + new Date().toTimeString().split(' ')[0];
+          
+          dashState.rawOrders = [];
+          if (data) {
+            for (let key in data) {
+              if (data[key]) {
+                dashState.rawOrders.push(data[key]);
+              }
+            }
+          }
+          renderDashboardMetrics();
+        })
+        .catch(err => {
+          statusText.textContent = '連線失敗/等待推送';
+          console.warn('Firebase 讀取失敗:', err);
+        });
+    }
+
+    function renderDashboardMetrics() {
+      const today = new Date();
+      let startStr = getLocalDateStr(today);
+      let endStr = getLocalDateStr(today);
+
+      if (dashState.currentFilter === 'yesterday') {
+        const yest = new Date(today);
+        yest.setDate(today.getDate() - 1);
+        startStr = getLocalDateStr(yest);
+        endStr = getLocalDateStr(yest);
+      } else if (dashState.currentFilter === 'week') {
+        const weekAgo = new Date(today);
+        weekAgo.setDate(today.getDate() - 7);
+        startStr = getLocalDateStr(weekAgo);
+        endStr = getLocalDateStr(today);
+      }
+
+      const filtered = dashState.rawOrders.filter(o => {
+        if (!o.dateStr && o.dateTime) o.dateStr = o.dateTime.split(' ')[0];
+        return o.dateStr >= startStr && o.dateStr <= endStr && o.orderNo !== '開箱稽核';
+      });
+
+      // 有效完成訂單
+      const validOrders = filtered.filter(o => !o.voided);
+      const totalSales = validOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+      const totalCount = validOrders.length;
+      const aov = totalCount > 0 ? Math.round(totalSales / totalCount) : 0;
+
+      document.getElementById('m-total-sales').textContent = `NT$ ${totalSales.toLocaleString()}`;
+      document.getElementById('m-total-orders').textContent = `${totalCount} 筆`;
+      document.getElementById('m-aov').textContent = `NT$ ${aov.toLocaleString()}`;
+      document.getElementById('m-sales-sub').textContent = startStr === endStr ? startStr : `${startStr} 至 ${endStr}`;
+
+      // 早晚班拆分
+      let morningSales = 0, morningCount = 0;
+      let eveningSales = 0, eveningCount = 0;
+
+      validOrders.forEach(o => {
+        const timeStr = o.dateTime ? o.dateTime.split(' ')[1] : '00:00:00';
+        const hh = parseInt(timeStr.split(':')[0], 10);
+        if (hh < 15) {
+          morningSales += o.total;
+          morningCount++;
+        } else {
+          eveningSales += o.total;
+          eveningCount++;
+        }
+      });
+
+      document.getElementById('shift-m-sales').textContent = `NT$ ${morningSales.toLocaleString()}`;
+      document.getElementById('shift-m-count').textContent = `${morningCount} 筆`;
+      document.getElementById('shift-e-sales').textContent = `NT$ ${eveningSales.toLocaleString()}`;
+      document.getElementById('shift-e-count').textContent = `${eveningCount} 筆`;
+
+      // 付款拆分
+      let cashSales = 0, cashCount = 0;
+      let cardDineInSales = 0, cardDineInCount = 0;
+      let cardDeliverySales = 0, cardDeliveryCount = 0;
+
+      validOrders.forEach(o => {
+        const isCard = (o.payMethod === '刷卡' || o.payMethod === '信用卡');
+        const isDelivery = o.serviceType === '外送';
+
+        if (isCard) {
+          if (isDelivery) {
+            cardDeliverySales += o.total;
+            cardDeliveryCount++;
+          } else {
+            cardDineInSales += o.total;
+            cardDineInCount++;
+          }
+        } else {
+          cashSales += o.total;
+          cashCount++;
+        }
+      });
+
+      document.getElementById('pay-cash').textContent = `NT$ ${cashSales.toLocaleString()} (${cashCount}筆)`;
+      document.getElementById('pay-card-dinein').textContent = `NT$ ${cardDineInSales.toLocaleString()} (${cardDineInCount}筆)`;
+      document.getElementById('pay-card-delivery').textContent = `NT$ ${cardDeliverySales.toLocaleString()} (${cardDeliveryCount}筆)`;
+
+      // 交易日誌降序列表
+      const sortedAll = [...filtered].sort((a, b) => (b.dateTime > a.dateTime ? 1 : (b.dateTime < a.dateTime ? -1 : 0)));
+      const listContainer = document.getElementById('orders-feed-list');
+      document.getElementById('orders-feed-count').textContent = `共 ${sortedAll.length} 筆`;
+      listContainer.innerHTML = '';
+
+      if (sortedAll.length === 0) {
+        listContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 30px 0;">此期間尚無雲端交易紀錄</div>';
+        return;
+      }
+
+      sortedAll.forEach(o => {
+        const card = document.createElement('div');
+        card.className = `order-item-card ${o.voided ? 'voided' : ''}`;
+        
+        let shiftBadge = '早班';
+        if (o.dateTime) {
+          const hh = parseInt(o.dateTime.split(' ')[1].split(':')[0], 10);
+          if (hh >= 15) shiftBadge = '晚班';
+        }
+
+        card.innerHTML = `
+          <div class="order-header">
+            <span class="order-no">${o.orderNo}</span>
+            <span class="order-total">${o.voided ? '已作廢' : 'NT$ ' + o.total}</span>
+          </div>
+          <div class="order-meta">
+            <span>📅 ${o.dateTime}</span>
+            <span>【${shiftBadge}】</span>
+            <span>🏷️ ${o.serviceType} / ${o.payMethod}</span>
+          </div>
+          <div class="order-items">${o.itemsSummary || '包含多項拉麵餐點'}</div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // 鍵盤 Enter 觸發解鎖
+    document.getElementById('pin-input').addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') unlockDashboard();
+    });
+  </script>
+</body>
+</html>
