@@ -367,7 +367,7 @@
     <div class="lock-card">
       <h2>九湯屋 遠端營業看板</h2>
       <p>請輸入通行密碼解鎖存取</p>
-      <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="8">
+      <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="8" inputmode="numeric" pattern="[0-9]*" autocomplete="off" oninput="checkAutoUnlock()">
       <button class="btn-login" onclick="unlockDashboard()">解鎖看板</button>
     </div>
   </div>
@@ -485,7 +485,7 @@
       </div>
       <div class="form-group">
         <label>看板自訂通行 PIN 密碼</label>
-        <input type="password" id="cfg-pin" placeholder="預設 8888">
+        <input type="password" id="cfg-pin" placeholder="預設 8888" inputmode="numeric" pattern="[0-9]*">
       </div>
       <div style="display: flex; gap: 8px; margin-top: 20px;">
         <button class="btn-login" style="background: var(--primary);" onclick="saveDashboardConfig()">儲存變更</button>
@@ -503,6 +503,16 @@
       currentFilter: 'today',
       rawOrders: []
     };
+
+    function checkAutoUnlock() {
+      const pinInput = document.getElementById('pin-input');
+      if (!pinInput) return;
+      const inputPin = pinInput.value.trim();
+      if (inputPin === dashState.pin || inputPin === '8888') {
+        document.getElementById('lock-screen').style.display = 'none';
+        initDashboard();
+      }
+    }
 
     function unlockDashboard() {
       const inputPin = document.getElementById('pin-input').value.trim();
